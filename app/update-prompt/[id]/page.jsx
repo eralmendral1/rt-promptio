@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 import Form from '@components/Form'
 
-const CreatePrompt = () => {
-    const { data: session } = useSession()
-   
+const EditPrompt = ({ params }) => {
+    const promptId = params.id
+    console.log("🚀 ~ file: page.jsx:10 ~ EditPrompt ~ promptId:", promptId)
+
     const router = useRouter()
     const [submitting, setSubmitting] = useState(false)
     const [prompt, setPrompt] = useState({
@@ -16,18 +16,17 @@ const CreatePrompt = () => {
         tag: ''
     })
 
-    const createPrompt = async (e) => {
+    const updatePrompt = async (e) => {
         e.preventDefault()
-
-      
         setSubmitting(true)
 
+        if (!promptId) return alert("Prompt ID not found.")
+
         try {
-            const response = await fetch('/api/prompt/new', {
-                method: 'POST',
+            const response = await fetch(`/api/prompt/${promptId}`, {
+                method: 'PATCH',
                 body: JSON.stringify({
                     prompt: prompt.prompt,
-                    userId: session?.user.id,
                     tag: prompt.tag
                 })
             })
@@ -42,17 +41,33 @@ const CreatePrompt = () => {
         }
     }
 
+    useEffect(() => {
+        const getPrompDetails = async () => {
+            const response = await fetch(`/api/prompt/${promptId}`)
+            const data = await response.json()
+            
+            setPrompt({
+                prompt: data.prompt,
+                tag: data.tag
+            })
+        }
+
+        console.log('promptid:', promptId)
+
+        if (promptId) getPrompDetails()
+    }, [promptId])
+
     return (
         <div>
             <Form
-                type="Create"
+                type="Edit"
                 prompt={prompt}
                 setPrompt={setPrompt}
                 submitting={submitting}
-                handleSubmit={createPrompt}
+                handleSubmit={updatePrompt}
             />
         </div>
     )
 }
 
-export default CreatePrompt
+export default EditPrompt
